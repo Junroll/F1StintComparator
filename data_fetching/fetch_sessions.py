@@ -20,9 +20,9 @@ for n in {1, 2, 3}:
     _SessionAliases[f"freepractice{n}"] = f"Practice {n}"
 
 
-#Normalizes session name input to ensure it is a valid input.
-#If input is None, use None. If input is in _SessionAlias, use the corresponding Value.
-#IF input not None and not in _SessionAlias, raise ValueError
+'''Normalizes session name input to ensure it is a valid input.
+If input is None, use None. If input is in _SessionAlias, use the corresponding Value.
+IF input not None and not in _SessionAlias, raise ValueError'''
 def normalizeSessionName(name: Optional[str]) -> Optional[str]:
     if name is None:
         return None
@@ -32,8 +32,8 @@ def normalizeSessionName(name: Optional[str]) -> Optional[str]:
         return _SessionAliases[key]
     raise ValueError(f"Unknown Session Name [{name}]. Valid options: {list(_SessionAliases.keys())}")
 
-#Returns all {sessionName} sessions for the year.
-#Each {sessionName} item contains session_key, location, session_name, date.
+'''Returns all {sessionName} sessions for the year.
+Each {sessionName} item contains session_key, location, session_name, date.'''
 def fetchSessions(year: int, session_name: Optional[str] = None) -> List[Dict]:
     url = f"{API}/sessions"
     params = {"year":year}
@@ -45,25 +45,12 @@ def fetchSessions(year: int, session_name: Optional[str] = None) -> List[Dict]:
 
     params["session_name"] = normalizedName
 
-    response = requests.get(url,params,timeout=30)
+    response = requests.get(url,params=params,timeout=30)
     response.raise_for_status()
 
     return response.json()
 
-#Simple helper function to print out the desired sessions in the entire year.
-def printSessionList(year: int, session_name: Optional[str] = None) -> None:
-    sessions = fetchSessions(year,session_name)
-    label = session_name or "ALL"
-    print(f"Sessions for {year} ({label}):")
-    for s in sessions:
-        key = s.get("session_key")
-        country_name = s.get("country_name")
-        location = s.get("location", s.get("name","Unknown"))
-        start = s.get("date_start", s.get("date", "No date known"))
-
-        print(f"{key} – {country_name} – {location} ({start})")
-
-#Helper function to fetch session data using its session_key
+'''Helper function to fetch session data using its session_key'''
 def fetchSessionByKey(session_key: int) -> Dict:
     url = f"{API}/sessions"
     params = {"session_key":session_key}
@@ -75,9 +62,9 @@ def fetchSessionByKey(session_key: int) -> Dict:
         raise ValueError(f"No session data found for session_key = {session_key}")
     return data[0]
 
-#Helper function to find session data by either location or name
-def findSessionsbyName(year: int, name_substring:str) -> List[Dict]:
-    all_sessions = fetchSessions(year,None)
+'''Helper function to find session data by either location or name'''
+def fetchSessionsByName(year: int, name_substring:str, session_name: Optional[str] = None) -> List[Dict]:
+    all_sessions = fetchSessions(year,session_name)
     substring_lower = name_substring.strip().lower()
 
     matching_sessions = []
@@ -93,3 +80,16 @@ def findSessionsbyName(year: int, name_substring:str) -> List[Dict]:
             matching_sessions.append(s)
 
     return matching_sessions
+
+'''Simple helper function to print out the desired sessions in the entire year.'''
+def printSessionList(year: int, session_name: Optional[str] = None) -> None:
+    sessions = fetchSessions(year,session_name)
+    label = session_name or "ALL"
+    print(f"Sessions for {year} ({label}):")
+    for s in sessions:
+        key = s.get("session_key")
+        country_name = s.get("country_name")
+        location = s.get("location", s.get("name","Unknown"))
+        start = s.get("date_start", s.get("date", "No date known"))
+
+        print(f"{key} – {country_name} – {location} ({start})")
