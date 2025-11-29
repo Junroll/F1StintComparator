@@ -19,7 +19,6 @@ for n in {1, 2, 3}:
     _SessionAliases[f"free practice {n}"] = f"Practice {n}"
     _SessionAliases[f"freepractice{n}"] = f"Practice {n}"
 
-
 '''Normalizes session name input to ensure it is a valid input.
 If input is None, use None. If input is in _SessionAlias, use the corresponding Value.
 IF input not None and not in _SessionAlias, raise ValueError'''
@@ -51,7 +50,7 @@ def fetchSessions(year: int, session_name: Optional[str] = None) -> List[Dict]:
     return response.json()
 
 '''Helper function to fetch session data using its session_key'''
-def fetchSessionByKey(session_key: int) -> Dict:
+def fetchSessionByKey(session_key: int or str) -> Dict:
     url = f"{API}/sessions"
     params = {"session_key":session_key}
     response = requests.get(url,params,timeout=30)
@@ -81,6 +80,10 @@ def fetchSessionsByName(year: int, name_substring:str, session_name: Optional[st
 
     return matching_sessions
 
+'''Helper function to fetch the latest session'''
+def fetchLatestSession() -> Dict:
+    return fetchSessionByKey("latest")
+
 '''Simple helper function to print out the desired sessions in the entire year.'''
 def printSessionList(year: int, session_name: Optional[str] = None) -> None:
     sessions = fetchSessions(year,session_name)
@@ -93,3 +96,19 @@ def printSessionList(year: int, session_name: Optional[str] = None) -> None:
         start = s.get("date_start", s.get("date", "No date known"))
 
         print(f"{key} – {country_name} – {location} ({start})")
+
+'''Helper to print details of a given dictionary in readable format'''
+def printSessions(sessions: List[Dict] or Dict) -> None:
+    if not sessions:
+        print("No Sessions Found.")
+        return
+    if type(sessions) == dict:
+        sessions = [sessions]
+    for s in sessions:
+        key = s.get("session_key")
+        country_name = s.get("country_name")
+        location = s.get("location", s.get("name", "Unknown"))
+        session_name = s.get("session_name")
+        start = s.get("date_start", s.get("date", "No date known"))
+
+        print(f"{key} – {country_name} – {location} – {session_name} – ({start})")
