@@ -7,32 +7,43 @@ and fills out the following information according to their stint informations
 - "laptimes" -> array of arrays, with each interior arrays being laptimes of the corresponding stints
 - "pit_out_lap" -> arrray containing the laps where the driver exited the pits.
 The dictionary for each driver is nested into a parent dictionary, where the driver_number is the key.'''
-def sortDriverLaps(session_key: int, driver_number: Optional[int] = None) -> dict:
-    stints = fS.fetchStints(session_key, driver_number)
+def sortDriverLaps(session_key: int,driver_number: Optional[int] = None) -> dict:
+    stints = fS.fetchStints(session_key,driver_number)
+    all_laps = fL.fetchLaps(session_key,driver_number)
+    laps_by_driver = {}
     driverLapData = {}
+
+    for lap in all_laps:
+        driver = lap.get("driver_number")
+        laps_by_driver.setdefault(driver,[]).append(lap)
 
     for s in stints:
         driver = s.get("driver_number")
-        if driver not in driverLapData.keys():
-            driverLapData[driver] = {
-                "compounds": [],
-                "laptimes": [],
-                "pit_out_lap": []
-            }
+        driverLapData.setdefault(driver,{
+            "compounds": [],
+            "laptimes": [],
+            "pit_out_lap": []
+        })
         driverData = driverLapData[driver]
+        lap_start = s.get("lap_start")
+        lap_end = s.get("lap_end")
+        compound = s.get("compound")
         index = s.get("stint_number") - 1
         stintLapTimes = []
-        segmentLaps = fL.fetchLapsBySegment(session_key, s["lap_start"], s["lap_end"], driver)
-        for lap in segmentLaps:
-            if lap["lap_duration"] is None:
-                stintLapTimes.append(0)
-            else: stintLapTimes.append(lap["lap_duration"])
 
-            if lap["is_pit_out_lap"]:
-                driverData["pit_out_lap"].append(lap["lap_number"])
+        if driver in laps_by_driver and lap_start is not None and lap_end is not None:
+            segment = laps_by_driver[driver][lap_start-1:lap_end]
 
-        driverData["compounds"].insert(index, s["compound"])
-        driverData["laptimes"].insert(index, stintLapTimes)
+            for lap in segment:
+                laptime = lap.get("lap_duration")
+                stintLapTimes.append(laptime if laptime is not None else 0)
+                if lap.get("is_pit_out_lap"):
+                    driverData["pit_out_lap"].append(lap.get("lap_number"))
+        else:
+            stintLapTimes = []
+
+        driverData["compounds"].insert(index,compound)
+        driverData["laptimes"].insert(index,stintLapTimes)
 
     return driverLapData
 
@@ -49,3 +60,5 @@ def printLaptimeInformation(driverLapData: dict) -> None:
         print(f"Driver {driver} – {driverData.get("compounds")[index]} – {driverData.get("laptimes")[index]}")
     print(f"Pit Out Laps – {driverData.get("pit_out_lap")}")
     print("-"*40)
+
+printLaptimeInformation(sortDriverLaps(9850))
