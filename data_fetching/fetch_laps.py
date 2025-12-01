@@ -48,7 +48,9 @@ def fetchLapsBySegment(session_key: int,
         lap_number = lap.get("lap_number")
         if lap_number is None:
             continue
-        if lap_start <= int(lap_number) <= lap_end:
+        if lap_number > lap_end:
+            break
+        if lap_start <= lap_number <= lap_end:
             segment.append(lap)
 
     return segment
